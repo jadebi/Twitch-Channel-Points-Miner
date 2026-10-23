@@ -102,6 +102,26 @@ When running a prebuilt binary, the miner uses `./config.json` if it exists in t
   - `delay_mode` / `delay`: When to place the bet (default `FROM_END`, 6 seconds).
   - `filter_condition`: Optional object to skip betting unless a live metric meets your rule. Example: `{ "by": "TOTAL_USERS", "where": "GTE", "value": 50 }` to skip bets until at least 50 users participate. `by` supports `PERCENTAGE_USERS`, `ODDS`, `ODDS_PERCENTAGE`, `TOP_POINTS`, `TOTAL_USERS`, `TOTAL_POINTS`; `where` supports `GT`, `LT`, `GTE`, `LTE`.
 
+## Environment variable overrides
+
+Every key in `config.json` can be overridden with an environment variable. The
+variable name is `TCPM_` plus the uppercased key path joined by `_` (nested keys use underscores instead of dots). Values are parsed type-aware:
+
+- booleans: `true`/`false`/`1`/`0`/`yes`/`no`
+- integers and floats: `123`, `0.5`
+- strings: as-is
+- arrays of strings: comma-separated, e.g. `chan1,chan2`
+- objects: a JSON object passed to the parent variable
+ü
+TCPM_STREAMERS=chan1,chan2 ./miner
+TCPM_BET_STRATEGY=smart TCPM_DEBUG=true ./miner
+TCPM_PRIVACY_ANONYMIZE_LOGS=true ./miner
+```
+
+Path overrides still take precedence: `TCPM_CONFIG` and `TCPM_DATA_DIR`.
+
+This is useful for easy docker configuration (see docker-compose.yml and .env.example).
+
 ## How it works
 - Authenticates via Twitch device flow, persists cookies per user, and refreshes the client build id for GQL calls.
 - Loads channel points context to grab balances and blue chests; watches two live streams at a time for minute-watched events to keep streaks active.
@@ -109,6 +129,23 @@ When running a prebuilt binary, the miner uses `./config.json` if it exists in t
 - If you have an active subscription (multiplier) on a streamer, their name is highlighted in gold everywhere it appears in the logs so you can quickly spot priority channels.
 - Listens to PubSub (`community-points-user-v1`) for instant point gain updates and logs deltas with reasons.
 - Periodically claims inventory drops, can optionally log drop progress during those checks, and can auto-join raids and continue mining the destination channel.
+
+## Docker
+A two-stage `Dockerfile` builds a static binary and runs it on a `scratch` image.
+
+Build and run:
+```bash
+docker buildx build . -t tcpm:latest
+docker run --rm -it \
+  -v ./cookies:/app/data/cookies \
+  -e TCPM_USERNAME=your-username \
+  tcpm:latest
+```
+Or with the docker-compose:
+```bash
+docker compose up -d
+```
+The compose file mounts `./cookies` and `./config.json` into `/app/data`. `TCPM_DATA_DIR` is set to `/app/data` in the image. The image runs as uid 10001, so make sure the mounted files are readable/writable by that user.
 
 ## Notes
 - Tested with Go 1.21; dependencies are in `go.mod`.
