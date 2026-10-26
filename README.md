@@ -112,10 +112,12 @@ variable name is `TCPM_` plus the uppercased key path joined by `_` (nested keys
 - strings: as-is
 - arrays of strings: comma-separated, e.g. `chan1,chan2`
 - objects: a JSON object passed to the parent variable
-ü
-TCPM_STREAMERS=chan1,chan2 ./miner
-TCPM_BET_STRATEGY=smart TCPM_DEBUG=true ./miner
-TCPM_PRIVACY_ANONYMIZE_LOGS=true ./miner
+
+### Usage examples
+```
+TCPM_STREAMERS=coolstreamer,beststreamer ./tcp-miner
+TCPM_BET_STRATEGY=smart TCPM_DEBUG=true ./tcp-miner
+TCPM_PRIVACY_ANONYMIZE_LOGS=true ./tcp-miner
 ```
 
 Path overrides still take precedence: `TCPM_CONFIG` and `TCPM_DATA_DIR`.
